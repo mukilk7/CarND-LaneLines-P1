@@ -34,8 +34,8 @@ On image frames where the lanes had high curvature, the extrapolated straight la
 
 ##**Finished Videos**
 
-![](https://github.com/eltomate/CarND-LaneLines-P1/raw/master/finished/p1_white.gif)
+![](https://github.com/mukilk7/CarND-LaneLines-P1/raw/master/finished/p1_white.gif)
 
-![](https://github.com/eltomate/CarND-LaneLines-P1/raw/master/finished/p1_yellow.gif)
+![](https://github.com/mukilk7/CarND-LaneLines-P1/raw/master/finished/p1_yellow.gif)
 
-![](https://github.com/eltomate/CarND-LaneLines-P1/raw/master/finished/p1_challenge.gif)
+![](https://github.com/mukilk7/CarND-LaneLines-P1/raw/master/finished/p1_challenge.gif)
