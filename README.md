@@ -1,74 +1,41 @@
 #**Finding Lane Lines on the Road** 
+
 [![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
 
-<img src="laneLines_thirdPass.jpg" width="480" alt="Combined Image" />
+##**My solution approach and reflections**
 
-When we drive, we use our eyes to decide where to go.  The lines on the road that show us where the lanes are act as our constant reference for where to steer the vehicle.  Naturally, one of the first things we would like to do in developing a self-driving car is to automatically detect lane lines using an algorithm.
+I tried out the following techniques to join lane segments after canny detection, region masking and hough transformation of a video frame:
 
-In this project you will detect lane lines in images using Python and OpenCV.  OpenCV means "Open-Source Computer Vision", which is a package that has many useful tools for analyzing images.  
+1. Detect the left and right lane top most and bottom most (x,y) point pairs and join them in a single line for each lane.
+2. For each lane, gather a series of points from all the line segments and use opencv fitLine that minimizes the squared error of points.
+3. Compute the average slope and intercept of all the line segments that make up a lane and use that to draw a single lane line.
 
-## If you have already installed the [CarND Term1 Starter Kit](https://github.com/udacity/CarND-Term1-Starter-Kit/blob/master/README.md) you should be good to go!   If not, you can install the starter kit or follow the install instructions below to get started on this project. ##
+Approach 3 worked for me the best. But the lanes seem to jump around too much from frame to frame in the test videos. So I tried the following two additional techniques:
 
-**Step 1:** Getting setup with Python
+1. Limit the percentage change in slope of a lane line between each successive video frame to a tunable paramater value.
+2. Use a running exponentially weighted moving average to "smooth" out sudden changes in a lane line's slope.
 
-To do this project, you will need Python 3 along with the numpy, matplotlib, and OpenCV libraries, as well as Jupyter Notebook installed. 
+Approach 2 gave me the best result as shown in the video.
 
-We recommend downloading and installing the Anaconda Python 3 distribution from Continuum Analytics because it comes prepackaged with many of the Python dependencies you will need for this and future projects, makes it easy to install OpenCV, and includes Jupyter Notebook.  Beyond that, it is one of the most common Python distributions used in data analytics and machine learning, so a great choice if you're getting started in the field.
+When I moved on to trying my pipeline on the challenge video I faced several challenges as listed below:
 
-Choose the appropriate Python 3 Anaconda install package for your operating system <A HREF="https://www.continuum.io/downloads" target="_blank">here</A>.   Download and install the package.
+*Challenge 1: Detecting lane lines against a light concrete background instead of black asphalt and also when there were shadows on the road ahead*
 
-If you already have Anaconda for Python 2 installed, you can create a separate environment for Python 3 and all the appropriate dependencies with the following command:
+The grayscale image with gaussian blur applied to a video frame basically washed out the pixel intensity difference between the background and the lane lines. I tried the following two approaches to overcome the problem:
 
-`>  conda create --name=yourNewEnvironment python=3 anaconda`
+1. a. I adjusted the low and high thresholds of the Canny edge detection algorithm to pick out very little pixel intensity differences. This worked for the video frames where the lanes lines were against concrete but resulted in a lot of spurious edges for the regular case. I figured that the Canny parameters need to be determined dynamically based on the current frame. However, I did not know of a way of doing that.
+1. b. I converted the image to HSV scale instead of grayscale and filtered out different shades of white and yellow pixels and applied Canny edge detection on the resultant image with the same thresholding parameters used for all the other videos.
 
-`>  source activate yourNewEnvironment`
+Approach 1.b gave me the best result. However, I realize that this approach may not work ideally when the lane lines are or appear to be of different colors due to environmental conditions (such as night or the presence of snow etc.). On browsing the facebook page for the December 2016 class, I learned of two possible techniques that could be used to deal with this problem: (i) Random Sampling Consensus (RANSAC) and (ii) Kalman Filtering. I spent some time learning about the intuition behind both of those techniques so that I might be able to use it in a future project.
 
-**Step 2:** Installing OpenCV
+*Challenge 2: Lanes with high curvature*
 
-Once you have Anaconda installed, first double check you are in your Python 3 environment:
+On image frames where the lanes had high curvature, the extrapolated straight lane lines appearing somewhat tangential to the curvature of the actual lane line. Some of these artifacts could perhaps be seen in my output for the challenge video. The only option I could think of was to perhaps fit a curve with higher order polynomials intead of a straight line.
 
-`>python`    
-`Python 3.5.2 |Anaconda 4.1.1 (x86_64)| (default, Jul  2 2016, 17:52:12)`  
-`[GCC 4.2.1 Compatible Apple LLVM 4.2 (clang-425.0.28)] on darwin`  
-`Type "help", "copyright", "credits" or "license" for more information.`  
-`>>>`   
-(Ctrl-d to exit Python)
+##**Finished Videos**
 
-run the following commands at the terminal prompt to get OpenCV:
+![](https://github.com/eltomate/CarND-LaneLines-P1/raw/master/finished/p1_white.gif)
 
-`> pip install pillow`  
-`> conda install -c menpo opencv3=3.1.0`
+![](https://github.com/eltomate/CarND-LaneLines-P1/raw/master/finished/p1_yellow.gif)
 
-then to test if OpenCV is installed correctly:
-
-`> python`  
-`>>> import cv2`  
-`>>>`  (i.e. did not get an ImportError)
-
-(Ctrl-d to exit Python)
-
-**Step 3:** Installing moviepy  
-
-We recommend the "moviepy" package for processing video in this project (though you're welcome to use other packages if you prefer).  
-
-To install moviepy run:
-
-`>pip install moviepy`  
-
-and check that the install worked:
-
-`>python`  
-`>>>import moviepy`  
-`>>>`  (i.e. did not get an ImportError)
-
-(Ctrl-d to exit Python)
-
-**Step 4:** Opening the code in a Jupyter Notebook
-
-You will complete this project in a Jupyter notebook.  If you are unfamiliar with Jupyter Notebooks, check out <A HREF="https://www.packtpub.com/books/content/basics-jupyter-notebook-and-python" target="_blank">Cyrille Rossant's Basics of Jupyter Notebook and Python</A> to get started.
-
-Jupyter is an ipython notebook where you can run blocks of code and see results interactively.  All the code for this project is contained in a Jupyter notebook. To start Jupyter in your browser, run the following command at the terminal prompt (be sure you're in your Python 3 environment!):
-
-`> jupyter notebook`
-
-A browser window will appear showing the contents of the current directory.  Click on the file called "P1.ipynb".  Another browser window will appear displaying the notebook.  Follow the instructions in the notebook to complete the project.  
+![](https://github.com/eltomate/CarND-LaneLines-P1/raw/master/finished/p1_challenge.gif)
